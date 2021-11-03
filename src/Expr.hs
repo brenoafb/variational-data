@@ -9,6 +9,7 @@ import Data.List (nub)
 import Data.Function (fix)
 import Data.Generics
 import Language.Haskell.TH
+import Metalift
 
 -- data Expr = Num Int | Add Expr Expr
 -- exprD :: Q Dec
@@ -29,7 +30,7 @@ liftExpr decl = do
                   ]
   pure [DataD [] d [] Nothing (cs ++ [c]) []]
 
-liftedExpr = liftExpr exprD
+liftedExprD = liftExpr exprD
 
 -- eval :: Expr -> Int
 -- eval (Num x) = x

@@ -5,27 +5,35 @@ module Metalift where
 import Language.Haskell.TH
 import Data.Generics
 
-metaliftD :: [Dec] -> [Dec]
-metaliftD = everywhere $ mkT metalift
+liftFunD :: Dec -> Dec
+liftFunD (FunD name clauses) = FunD name $ liftedClauses ++ [varClause]
+  where liftedClauses = map metaliftC clauses
+        ve = mkName "ve"
+        varClause = Clause [ConP (mkName "VExpr") [VarP ve]]
+                           (NormalB (InfixE (Just (VarE ve))
+                                            (VarE (mkName ">>="))
+                                            (Just (VarE name)))) []
 
-metaliftE :: Exp -> Exp
-metaliftE = everywhere $ mkT metalift
+-- eval (VExpr ve) = ve >>= eval
 
-metalift :: Exp -> Exp
--- plain variables
-metalift (VarE x) = AppE (VarE $ mkName "pure") (VarE x)
--- binary function application
-metalift (InfixE x op y) =
+metaliftD :: Dec -> Dec
+metaliftD = everywhere $ mkT metaliftB
+
+metaliftC :: Clause -> Clause
+metaliftC = everywhere $ mkT metaliftB
+
+liftT :: Type -> Type
+liftT = undefined
+
+metaliftB :: Body -> Body
+-- lift plain variables into applicative
+metaliftB (NormalB (VarE x)) = NormalB (AppE (VarE $ mkName "pure") (VarE x))
+-- lift binary function application
+metaliftB (NormalB (InfixE x op y)) =
+  NormalB
   (InfixE (Just (InfixE (Just op)
                         (VarE $ mkName "<$>")
                         x))
           (VarE $ mkName"<*>")
           y)
-metalift x = x
-
--- metalift :: ExpQ -> ExpQ
--- metalift e = do
---   e' <- e
---   case e' of
---     v@(VarE x) -> appE (varE $ mkName "pure") (varE x)
---     (LamE ps b) -> lamE (map pure ps) (metalift $ pure b)
+metaliftB x = x

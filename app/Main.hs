@@ -5,11 +5,13 @@ module Main where
 import CC.Syntax
 import CC.Semantics
 import Data.Generics
-import Expr
 import Text.Pretty.Simple (pPrint)
 import Language.Haskell.TH
+import Expr
+import Eval
+import Metalift
 
-$(liftedExpr)
+$(map liftFunD <$> evalD)
 
 main :: IO ()
 main = putStrLn "Hello world"
