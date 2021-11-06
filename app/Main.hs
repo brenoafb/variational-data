@@ -11,7 +11,11 @@ import Expr
 import Eval
 import Metalift
 
-$(map liftFunD <$> evalD)
+$(concat <$> (map liftFunD <$> evalD))
+
+$(concat <$> (map liftFunD <$> countNumsD))
+
+$(concat <$> (map liftFunD <$> countAddsD))
 
 main :: IO ()
 main = putStrLn "Hello world"
