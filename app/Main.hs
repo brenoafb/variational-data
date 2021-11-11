@@ -15,7 +15,7 @@ $(concat <$> (map liftFunD <$> evalD))
 
 $(concat <$> (map liftFunD <$> countNumsD))
 
-$(concat <$> (map liftFunD <$> countAddsD))
+-- $(concat <$> (map liftFunD <$> countAddsD))
 
 main :: IO ()
 main = putStrLn "Hello world"
