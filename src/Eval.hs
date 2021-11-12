@@ -3,27 +3,47 @@
 
 module Eval where
 
-import Data.Generics
 import Language.Haskell.TH
-import Metalift
 import Expr
 
 $(liftedExprD)
 
+evalD :: DecsQ
 evalD = [d|
   eval :: Expr -> Int
   eval (Num x) = x
   eval (Add x y) = (+) (eval x) (eval y)
   |]
 
+countNumsD :: DecsQ
 countNumsD = [d|
   countNums :: Expr -> Int
   countNums (Num x) = 1
   countNums (Add e1 e2) = (+) (countNums e1) (countNums e2)
   |]
 
+countAddsD :: DecsQ
 countAddsD = [d|
   countAdds :: Expr -> Int
   countAdds (Num _) = 0
-  countAdds (Add e1 e2) = (\x y -> 1 + x + y) (countAdds e1) (countAdds e2)
+  countAdds (Add e1 e2) = (+) ((+) 1 (countAdds e1)) (countAdds e2)
   |]
+
+getLiteralsD :: DecsQ
+getLiteralsD = [d|
+  getLiterals :: Expr -> [Int]
+  getLiterals (Num x) = [x]
+  getLiterals (Add e1 e2) = (++) (getLiterals e1) (getLiterals e2)
+  |]
+
+
+-- -- countUniqueLiterals :: V Expr -> V Int
+-- -- countUniqueLiterals ve = length . nub <$> vGetLiterals ve
+--
+-- -- countUniqueLiterals :: Expr -> V Int
+-- countUniqueLiterals e =
+--   length . nub
+--   <$> fix (\f e -> case e of
+--                      Num x -> pure [x]
+--                      Add e1 e2 -> (++) <$> f e1 <*> f e2
+--                      VExpr ve -> ve >>= f) e

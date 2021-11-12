@@ -32,28 +32,6 @@ liftExpr decl = do
 
 liftedExprD = liftExpr exprD
 
--- eval :: Expr -> Int
--- eval (Num x) = x
--- eval (Add x y) = eval x + eval y
-
--- eval :: Expr -> V Int
--- eval (Num x) = pure x
--- eval (Add v1 v2) = (+) <$> eval v1 <*> eval v2
--- eval (VExpr ve) = ve >>= eval
---
--- veval :: V Expr -> V Int
--- veval ve = ve >>= eval
---
--- countNums :: Expr -> V Int
--- countNums (Num x) = pure 1
--- countNums (Add e1 e2) = (+) <$> countNums e1 <*> countNums e2
--- countNums (VExpr ve) = ve >>= countNums
---
--- countAdds :: Expr -> V Int
--- countAdds (Num x) = pure 0
--- countAdds (Add e1 e2) = (\x y -> 1 + x + y) <$> countAdds e1 <*> countAdds e2
--- countAdds (VExpr ve) = ve >>= countAdds
---
 -- getLiterals :: Expr -> V [Int]
 -- getLiterals (Num x) = pure [x]
 -- getLiterals (Add e1 e2) = (++) <$> getLiterals e1 <*> getLiterals e2

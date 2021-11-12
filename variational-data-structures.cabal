@@ -29,6 +29,7 @@ library
       Expr
       Lib
       Metalift
+      SYB
       VEither
       VIdentity
       VPair
