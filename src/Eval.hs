@@ -37,9 +37,9 @@ getLiteralsD = [d|
   |]
 
 
--- -- countUniqueLiterals :: V Expr -> V Int
--- -- countUniqueLiterals ve = length . nub <$> vGetLiterals ve
---
+-- countUniqueLiterals :: V Expr -> V Int
+-- countUniqueLiterals ve = length . nub <$> vGetLiterals ve
+
 -- -- countUniqueLiterals :: Expr -> V Int
 -- countUniqueLiterals e =
 --   length . nub
