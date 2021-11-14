@@ -44,3 +44,22 @@ vast =
             , Obj (Add (Add (Num 3) (Num 5)) (Num 7))
             ]
     )
+
+
+vast1 :: V Expr
+vast1 =
+  Dim "A" ["a1", "a2"]
+  $ Obj
+  $ Add (Num 2)
+        (VExpr $ Chc "A" [ Obj $ Num 1
+                         , Obj $ Num 3
+                         ])
+
+vast2 :: V Expr
+vast2 =
+  Dim "A" ["a1", "a2"]
+  $ Obj
+  $ Add (Add (Num 2) (Num 1))
+        (VExpr $ Chc "A" [ Obj $ Add (Num 3) (Num 4)
+                         , Obj $ Num 5
+                         ])
