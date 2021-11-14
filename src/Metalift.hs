@@ -2,6 +2,7 @@
 
 module Metalift where
 
+import CC.Syntax hiding (Name)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import Data.Generics
@@ -26,14 +27,6 @@ mkvfun name = [ValD (VarP vname) body []]
                                (VarE (mkName ">>="))
                                (Just (VarE name)))
 
-appendName :: Name -> String -> Name
-appendName (Name occName _) s' = mkName $ s <> s'
-  where s = occString occName
-
-prependName :: String -> Name -> Name
-prependName s' (Name occName _) = mkName $ s' <> s
-  where s = occString occName
-
 metaliftBut :: Data a => Name -> a -> a
 metaliftBut name = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
   where shouldExclude (VarE name') =
@@ -50,3 +43,24 @@ metaliftE (LitE l) = AppE (VarE $ mkName "pure") (LitE l)
 metaliftE (AppE f x) = InfixE (Just f) (VarE $ mkName "<*>") (Just x)
 metaliftE (ListE l) = AppE (VarE $ mkName "pure") (ListE l)
 metaliftE x = x
+
+liftExpr :: Dec -> Dec
+liftExpr (DataD [] name [] Nothing cs ds) =
+  let vname = prependName "V" name
+      c = NormalC vname
+                  [ ( Bang NoSourceUnpackedness
+                           NoSourceStrictness
+                    , AppT (ConT ''V) (ConT name)
+                    )
+                  ]
+  in DataD [] name [] Nothing (cs ++ [c]) ds
+liftExpr x = x
+
+
+appendName :: Name -> String -> Name
+appendName (Name occName _) s' = mkName $ s <> s'
+  where s = occString occName
+
+prependName :: String -> Name -> Name
+prependName s' (Name occName _) = mkName $ s' <> s
+  where s = occString occName
