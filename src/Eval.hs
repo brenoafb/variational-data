@@ -22,11 +22,18 @@ countNumsD = [d|
   countNums (Add e1 e2) = (+) (countNums e1) (countNums e2)
   |]
 
+-- countAddsD :: DecsQ
+-- countAddsD = [d|
+--   countAdds :: Expr -> Int
+--   countAdds (Num _) = 0
+--   countAdds (Add e1 e2) = (+) ((+) 1 (countAdds e1)) (countAdds e2)
+--   |]
+
 countAddsD :: DecsQ
 countAddsD = [d|
   countAdds :: Expr -> Int
   countAdds (Num _) = 0
-  countAdds (Add e1 e2) = (+) ((+) 1 (countAdds e1)) (countAdds e2)
+  countAdds (Add e1 e2) = (\x y -> x + y + 1) (countAdds e1) (countAdds e2)
   |]
 
 getLiteralsD :: DecsQ

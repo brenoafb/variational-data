@@ -2,7 +2,8 @@
 
 module Metalift where
 
-import CC.Syntax hiding (Name)
+-- import CC.Syntax hiding (Name)
+import Var
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import Data.Generics
@@ -12,7 +13,7 @@ liftFunD :: Dec -> [Dec]
 liftFunD (SigD name (AppT l t)) = [SigD name (AppT l vt)]
   where vt = AppT (ConT $ mkName "V") t
 liftFunD (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]] ++ mkvfun name
-  where liftedClauses = map (metaliftBut name) clauses
+  where liftedClauses = map (metalift name) clauses
         ve = mkName "ve"
         varClause = Clause [ConP (mkName "VExpr") [VarP ve]]
                            (NormalB (InfixE (Just (VarE ve))
@@ -27,8 +28,8 @@ mkvfun name = [ValD (VarP vname) body []]
                                (VarE (mkName ">>="))
                                (Just (VarE name)))
 
-metaliftBut :: Data a => Name -> a -> a
-metaliftBut name = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
+metalift :: Data a => Name -> a -> a
+metalift name = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
   where shouldExclude (VarE name') =
           if name == name' then Stop else Continue
         shouldExclude (AppE (VarE name') _) =
@@ -42,6 +43,7 @@ metaliftE (VarE x) = AppE (VarE $ mkName "pure") (VarE x)
 metaliftE (LitE l) = AppE (VarE $ mkName "pure") (LitE l)
 metaliftE (AppE f x) = InfixE (Just f) (VarE $ mkName "<*>") (Just x)
 metaliftE (ListE l) = AppE (VarE $ mkName "pure") (ListE l)
+metaliftE (LamE a b) = AppE (VarE $ mkName "pure") (LamE a b)
 metaliftE x = x
 
 liftExpr :: Dec -> Dec
