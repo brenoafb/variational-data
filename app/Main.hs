@@ -14,7 +14,7 @@ import Metalift
 import Data.List (nub)
 
 $(concat <$> (map liftFunD <$> evalD))
-
+--
 $(concat <$> (map liftFunD <$> countNumsD))
 
 $(concat <$> (map liftFunD <$> countAddsD))
@@ -74,3 +74,11 @@ vast =
       Chc "A"
           (Obj (Add (Add (Num 2) (Num 4)) (Num 6)))
           (Obj (Add (Add (Num 3) (Num 5)) (Num 7))))
+
+
+vast1 :: V Expr
+vast1 =
+  Obj
+  $ If (VExpr $ Chc "A" (Obj $ Num 0) (Obj $ Num 1))
+       (Num 2)
+       (Num 3)

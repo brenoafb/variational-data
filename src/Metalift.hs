@@ -12,7 +12,7 @@ import SYB
 liftFunD :: Dec -> [Dec]
 liftFunD (SigD name (AppT l t)) = [SigD name (AppT l vt)]
   where vt = AppT (ConT $ mkName "V") t
-liftFunD (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]] ++ mkvfun name
+liftFunD (FunD name clauses) = FunD name (liftedClauses ++ [varClause]) : mkvfun name
   where liftedClauses = map (metalift name) clauses
         ve = mkName "ve"
         varClause = Clause [ConP (mkName "VExpr") [VarP ve]]
@@ -44,6 +44,12 @@ metaliftE (LitE l) = AppE (VarE $ mkName "pure") (LitE l)
 metaliftE (AppE f x) = InfixE (Just f) (VarE $ mkName "<*>") (Just x)
 metaliftE (ListE l) = AppE (VarE $ mkName "pure") (ListE l)
 metaliftE (LamE a b) = AppE (VarE $ mkName "pure") (LamE a b)
+metaliftE (CondE c t f) =
+  let x = mkName "x" -- TODO x may be captured, need to use Q monad
+  in AppE ( AppE (VarE $ mkName ">>=")
+                 c
+          ) (LamE [VarP x] (CondE (VarE x) t f)) -- [|(\x -> if x then t else f)|]
+
 metaliftE x = x
 
 liftExpr :: Dec -> Dec

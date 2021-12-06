@@ -10,6 +10,7 @@ exprD :: DecsQ
 exprD = [d|
   data Expr = Num Int
             | Add Expr Expr
+            | If Expr Expr Expr
           deriving (Show)
   |]
 
