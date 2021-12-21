@@ -5,52 +5,62 @@ module Eval where
 
 import Language.Haskell.TH
 import Expr
+import Var
+import Control.Monad (join)
+import Metalift
+
+(<**>) :: Monad m => m (a -> m b) -> m a -> m b
+mf <**> ma = join (mf <*> ma)
+
+liftM2 :: Monad m => (a -> b -> m c) -> m a -> m b -> m c
+liftM2 f x y = join $ f <$> x <*> y
+
+-- liftM2 f x y = f <**> x <**> y
+-- liftM2 apply (eval e1) (eval e2) = apply <**> eval e1 <**> eval e2
 
 $(liftedExprD)
 
-evalD :: DecsQ
-evalD = [d|
-  eval :: Expr -> Int
-  eval (Num x) = x
-  eval (Add x y) = (+) (eval x) (eval y)
-  |]
-
-countNumsD :: DecsQ
-countNumsD = [d|
-  countNums :: Expr -> Int
-  countNums (Num x) = 1
-  countNums (Add e1 e2) = (+) (countNums e1) (countNums e2)
-  |]
-
--- countAddsD :: DecsQ
--- countAddsD = [d|
---   countAdds :: Expr -> Int
---   countAdds (Num _) = 0
---   countAdds (Add e1 e2) = (+) ((+) 1 (countAdds e1)) (countAdds e2)
+-- evalD :: DecsQ
+-- evalD = [d|
+--   eval :: Expr -> Int
+--   eval (Num x) = x
+--   eval (Add x y) = (+) (eval x) (eval y)
 --   |]
 
-countAddsD :: DecsQ
-countAddsD = [d|
-  countAdds :: Expr -> Int
-  countAdds (Num _) = 0
-  countAdds (Add e1 e2) = (\x y -> x + y + 1) (countAdds e1) (countAdds e2)
+eval :: Expr -> V Expr
+eval (App e1 e2) = _ <**> eval e1 <**> eval e2
+eval (VExpr ve) = ve >>= eval
+eval x = pure x
+
+apply :: Expr -> Expr -> V Expr
+apply (Atom y) x  = error "Cannot apply atom"
+apply (Abs v b) x = eval $ subs v x b
+apply e@(App t1 t2) x = liftM2 apply (eval e) (pure x)
+
+subs :: String -> Expr -> Expr -> Expr
+subs v t (Atom y)
+  | v == y    = t
+  | otherwise = Atom y
+subs v t (Abs p b) = Abs p $ subs v t b
+subs v t (App t1 t2) = App (subs v t t1) (subs v t t2)
+
+
+evalApplyD = [d|
+    eval :: Expr -> Expr
+    eval (App e1 e2) = apply (eval e1) (eval e2)
+    eval (Atom s) = Atom s
+    eval (Abs s e) = Abs s e
+
+    apply :: Expr -> Expr -> Expr
+    apply (Abs v b) x = eval $ subs v x b
+    apply e@(App _ _) x = apply (eval e) x
   |]
 
-getLiteralsD :: DecsQ
-getLiteralsD = [d|
-  getLiterals :: Expr -> [Int]
-  getLiterals (Num x) = [x]
-  getLiterals (Add e1 e2) = (++) (getLiterals e1) (getLiterals e2)
-  |]
+liftDecsQ :: DecsQ -> DecsQ
+liftDecsQ decsq = do
+  decs <- runQ decsq
+  let names = getNames decs
+  pure $ concatMap (liftFunD names) decs
 
 
--- countUniqueLiterals :: V Expr -> V Int
--- countUniqueLiterals ve = length . nub <$> vGetLiterals ve
-
--- -- countUniqueLiterals :: Expr -> V Int
--- countUniqueLiterals e =
---   length . nub
---   <$> fix (\f e -> case e of
---                      Num x -> pure [x]
---                      Add e1 e2 -> (++) <$> f e1 <*> f e2
---                      VExpr ve -> ve >>= f) e
+liftedEvalApplyD = liftDecsQ evalApplyD

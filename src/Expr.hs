@@ -8,10 +8,17 @@ import Metalift
 
 exprD :: DecsQ
 exprD = [d|
-  data Expr = Num Int
-            | Add Expr Expr
-          deriving (Show)
+    data Expr = Atom String           -- x
+              | Abs  String Expr      -- λ x . <body>
+              | App  Expr Expr        -- (x y)
+              deriving Show
   |]
 
 liftedExprD :: DecsQ
 liftedExprD = fmap (fmap liftExpr) exprD
+
+-- TODO try to lift this instance
+-- instance Show Term where
+--   show (Atom x) = x
+--   show (Abs v b) = "(λ " <> v <> " . " <> show b <> ")"
+--   show (App t1 t2) = "(" <> show t1 <> " " <> show t2 <> ")"

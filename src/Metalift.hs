@@ -8,32 +8,42 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import Data.Generics
 import SYB
+import Data.List (nub)
 
-liftFunD :: Dec -> [Dec]
-liftFunD (SigD name (AppT l t)) = [SigD name (AppT l vt)]
+getNames :: [Dec] -> [Name]
+getNames =
+  nub . concatMap (everything (++) ([] `mkQ` getName))
+
+getName :: Dec -> [Name]
+getName (SigD name _) = [name]
+getName (FunD name _) = [name]
+getName _ = []
+
+liftFunD :: [Name] -> Dec -> [Dec]
+liftFunD names (SigD name (AppT l t)) = [SigD name (AppT l vt)]
   where vt = AppT (ConT $ mkName "V") t
-liftFunD (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]] ++ mkvfun name
-  where liftedClauses = map (metalift name) clauses
+liftFunD names (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]]
+  where liftedClauses = map (metalift names) clauses
         ve = mkName "ve"
         varClause = Clause [ConP (mkName "VExpr") [VarP ve]]
                            (NormalB (InfixE (Just (VarE ve))
                                             (VarE (mkName ">>="))
                                             (Just (VarE name)))) []
-liftFunD x = [x]
+liftFunD _ x = [x]
 
-mkvfun :: Name -> [Dec]
-mkvfun name = [ValD (VarP vname) body []]
-  where vname = prependName "v" name
-        body = NormalB (InfixE Nothing
-                               (VarE (mkName ">>="))
-                               (Just (VarE name)))
+-- mkvfun :: Name -> [Dec]
+-- mkvfun name = [ValD (VarP vname) body []]
+--   where vname = prependName "v" name
+--         body = NormalB (InfixE Nothing
+--                                (VarE (mkName ">>="))
+--                                (Just (VarE name)))
 
-metalift :: Data a => Name -> a -> a
-metalift name = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
-  where shouldExclude (VarE name') =
-          if name == name' then Stop else Continue
-        shouldExclude (AppE (VarE name') _) =
-          if name == name' then Stop else Continue
+metalift :: Data a => [Name] -> a -> a
+metalift names = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
+  where shouldExclude (VarE name) =
+          if name `elem` names then Stop else Continue
+        shouldExclude (AppE (VarE name) _) =
+          if name `elem` names then Stop else Continue
         shouldExclude (LamE _ _) = SelfOnly
         shouldExclude (ListE _) = SelfOnly
         shouldExclude _ = Continue
