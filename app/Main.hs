@@ -12,6 +12,7 @@ import Expr
 import Eval
 import Metalift
 import Data.List (nub)
+import Utils
 
 -- $(concat <$> (map liftFunD <$> evalD))
 --
@@ -31,6 +32,7 @@ $(liftedEvalApplyD)
 --   Add
 --     (Add (Num 1) (Add (Num 2) (Num 3)))
 --     (Add (Add (Num 3) (Num 4)) (Num 5))
+main = putStrLn "Metalift"
 
 vast :: V Expr
 vast =

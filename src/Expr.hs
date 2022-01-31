@@ -14,8 +14,7 @@ exprD = [d|
               deriving Show
   |]
 
-liftedExprD :: DecsQ
-liftedExprD = fmap (fmap liftExpr) exprD
+liftedExprD = exprD >>= \decs -> pure $ fmap liftExpr decs
 
 -- TODO try to lift this instance
 -- instance Show Term where
