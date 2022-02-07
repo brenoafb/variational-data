@@ -29,7 +29,6 @@ library
       Expr
       Lib
       Metalift
-      Scratch
       SYB
       Utils
       Var
