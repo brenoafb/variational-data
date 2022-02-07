@@ -22,13 +22,6 @@ countNumsD = [d|
   countNums (Add e1 e2) = (+) (countNums e1) (countNums e2)
   |]
 
--- countAddsD :: DecsQ
--- countAddsD = [d|
---   countAdds :: Expr -> Int
---   countAdds (Num _) = 0
---   countAdds (Add e1 e2) = (+) ((+) 1 (countAdds e1)) (countAdds e2)
---   |]
-
 countAddsD :: DecsQ
 countAddsD = [d|
   countAdds :: Expr -> Int
@@ -42,15 +35,3 @@ getLiteralsD = [d|
   getLiterals (Num x) = [x]
   getLiterals (Add e1 e2) = (++) (getLiterals e1) (getLiterals e2)
   |]
-
-
--- countUniqueLiterals :: V Expr -> V Int
--- countUniqueLiterals ve = length . nub <$> vGetLiterals ve
-
--- -- countUniqueLiterals :: Expr -> V Int
--- countUniqueLiterals e =
---   length . nub
---   <$> fix (\f e -> case e of
---                      Num x -> pure [x]
---                      Add e1 e2 -> (++) <$> f e1 <*> f e2
---                      VExpr ve -> ve >>= f) e

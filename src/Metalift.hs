@@ -12,7 +12,7 @@ import SYB
 liftFunD :: Dec -> [Dec]
 liftFunD (SigD name (AppT l t)) = [SigD name (AppT l vt)]
   where vt = AppT (ConT $ mkName "V") t
-liftFunD (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]] ++ mkvfun name
+liftFunD (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]]
   where liftedClauses = map (metalift name) clauses
         ve = mkName "ve"
         varClause = Clause [ConP (mkName "VExpr") [VarP ve]]
@@ -20,31 +20,6 @@ liftFunD (FunD name clauses) = [FunD name $ liftedClauses ++ [varClause]] ++ mkv
                                             (VarE (mkName ">>="))
                                             (Just (VarE name)))) []
 liftFunD x = [x]
-
-mkvfun :: Name -> [Dec]
-mkvfun name = [ValD (VarP vname) body []]
-  where vname = prependName "v" name
-        body = NormalB (InfixE Nothing
-                               (VarE (mkName ">>="))
-                               (Just (VarE name)))
-
-metalift :: Data a => Name -> a -> a
-metalift name = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
-  where shouldExclude (VarE name') =
-          if name == name' then Stop else Continue
-        shouldExclude (AppE (VarE name') _) =
-          if name == name' then Stop else Continue
-        shouldExclude (LamE _ _) = SelfOnly
-        shouldExclude (ListE _) = SelfOnly
-        shouldExclude _ = Continue
-
-metaliftE :: Exp -> Exp
-metaliftE (VarE x) = AppE (VarE $ mkName "pure") (VarE x)
-metaliftE (LitE l) = AppE (VarE $ mkName "pure") (LitE l)
-metaliftE (AppE f x) = InfixE (Just f) (VarE $ mkName "<*>") (Just x)
-metaliftE (ListE l) = AppE (VarE $ mkName "pure") (ListE l)
-metaliftE (LamE a b) = AppE (VarE $ mkName "pure") (LamE a b)
-metaliftE x = x
 
 liftExpr :: Dec -> Dec
 liftExpr (DataD [] name [] Nothing cs ds) =
@@ -58,6 +33,29 @@ liftExpr (DataD [] name [] Nothing cs ds) =
   in DataD [] name [] Nothing (cs ++ [c]) ds
 liftExpr x = x
 
+metalift :: Data a => Name -> a -> a
+metalift name = everywhereBut' (Continue `mkQ` shouldExclude) (mkT metaliftE)
+  where shouldExclude (VarE name') =
+          if name == name' then Stop else Continue
+        shouldExclude (AppE (VarE name') _) =
+          if name == name' then Stop else Continue
+        shouldExclude (LamE _ _) = SelfOnly
+        shouldExclude (ListE _) = SelfOnly
+        shouldExclude _ = Continue
+
+metaliftE :: Exp -> Exp
+metaliftE (AppE f x) = metaliftApp f x
+metaliftE e@(ListE _) = metaliftPure e
+metaliftE e@(LamE _ _) = metaliftPure e
+metaliftE e@(VarE _) = metaliftPure e
+metaliftE e@(LitE _) = metaliftPure e
+metaliftE x = x
+
+metaliftPure :: Exp -> Exp
+metaliftPure = AppE (VarE $ mkName "pure")
+
+metaliftApp :: Exp -> Exp -> Exp
+metaliftApp f x = InfixE (Just f) (VarE $ mkName "<*>") (Just x)
 
 appendName :: Name -> String -> Name
 appendName (Name occName _) s' = mkName $ s <> s'
